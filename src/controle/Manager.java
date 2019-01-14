@@ -1,3 +1,4 @@
+package controle;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -17,11 +18,10 @@ public class Manager {
 	static int status = 0;
 
 	public static void main(String[] args) throws IOException {
-		System.out.println("Vamo q vamo");
-		currentBlock = new Bloco(tamanhoBlocos);
+		
 		in = new BufferedReader(new FileReader("dados"));
 
-		setControle(in.readLine());
+		currentBlock = new Bloco(tamanhoBlocos, in.readLine());
 
 		while (in.ready()) {
 
@@ -29,7 +29,6 @@ public class Manager {
 
 	}
 
-	private static void setControle(String readLine) {
-	}
+	
 
 }
