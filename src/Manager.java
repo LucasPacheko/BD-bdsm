@@ -17,7 +17,7 @@ public class Manager {
 	static int status = 0;
 
 	public static void main(String[] args) throws IOException {
-
+		System.out.println("Vamo q vamo");
 		currentBlock = new Bloco(tamanhoBlocos);
 		in = new BufferedReader(new FileReader("dados"));
 
