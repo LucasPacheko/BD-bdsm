@@ -3,6 +3,8 @@ package models;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import com.sun.xml.internal.stream.util.BufferAllocator;
+
 import sun.security.jca.GetInstance;
 
 public class Bloco {
@@ -31,7 +33,25 @@ public class Bloco {
 			conteudo[p + i] = (byte) arrayChar[i];
 		}
 	}
+	public Bloco(int tamanho){
+		conteudo = new byte[tamanho];
+		p = 1;
 
+		byte[] bytes = ByteBuffer.allocate(4).putInt(id++).array();
+		int j = bytes.length - 1;
+		for (int i = p + 2; j > 0; i--) {
+			conteudo[i] = bytes[j--];
+			p++;
+		}
+		p++;
+		bytes = ByteBuffer.allocate(4).putInt(7).array();
+		j = bytes.length - 1;
+		for (int i = p + 2; j > 0; i--) {
+			conteudo[i] = bytes[j--];
+			p++;
+		}
+		
+	}
 	public static void main(String[] args) {
 		Bloco bloc = new Bloco(150, "testando");
 		System.out.println(bloc.getTamanho());
@@ -39,8 +59,8 @@ public class Bloco {
 	}
 	public void setProxBlocoLivre(Bloco proxBloco){
 		byte[] b = proxBloco.getIdBlocoArray();
-		for (int i = 1; i < b.length; i++) {
-			conteudo[4+i]=(byte)b[i];
+		for (int i = 0; i < b.length; i++) {
+			conteudo[5+i]=(byte)b[i];
 		}
 	}
 	public int getIdBlocoInt(){
@@ -89,13 +109,28 @@ public class Bloco {
 		for (int i = 0; i < data.length; i++) {
 			sizeTupla=data[i].length();
 		}
-		if(sizeBloco+sizeTupla>sizeBloco)return false;
+		
+		if(sizeBloco+sizeTupla+(data.length*2)+4>sizeBloco)return false;
 		written++;
+		byte[] size = ByteBuffer.allocate(4).putInt(sizeTupla).array();
+		for (byte b : size) {
+			conteudo[written++] = b;
+		}
 		for (int i = 0; i < data.length; i++) {
+			byte[] s = ByteBuffer.allocate(2).putShort((short)data.length).array();
+			for (byte b : s) {
+				conteudo[written++]=b;
+			}
 			for (int j = 0; j < data[i].length(); j++) {
 				conteudo[written++]=(byte)data[i].charAt(j);
 			}
 		}
+		return true;
+	}
+	public byte[] getConteudo() {
+		// TODO Auto-generated method stub
+		
+		return conteudo;
 	}
 	int getBytesUsados(){
 		byte[] b = {(byte)0,conteudo[5],conteudo[6],conteudo[7]};
