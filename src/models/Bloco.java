@@ -25,7 +25,7 @@ public class Bloco {
 		}
 		p += 5;
 		char[] arrayChar = header.toCharArray();
-		bytes = ByteBuffer.allocate(2).putShort((short) arrayChar.length).array();
+		bytes = ByteBuffer.allocate(2).putShort((short) (arrayChar.length+10)).array();
 		for (byte b : bytes) {
 			conteudo[p++] = b;
 		}
@@ -109,8 +109,8 @@ public class Bloco {
 		for (int i = 0; i < data.length; i++) {
 			sizeTupla=data[i].length();
 		}
-		
-		if(sizeBloco+sizeTupla+(data.length*2)+4>sizeBloco)return false;
+		sizeTupla+=(data.length*2)+4;
+		if(sizeBloco+sizeTupla>sizeBloco)return false;
 		written++;
 		byte[] size = ByteBuffer.allocate(4).putInt(sizeTupla).array();
 		for (byte b : size) {

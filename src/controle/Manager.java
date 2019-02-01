@@ -18,7 +18,7 @@ public class Manager {
 
 	static HashMap<Integer, Bloco> arquivoDeDados;
 
-	static int tamanhoBlocos = 32768;
+	static final int  tamanhoBlocos = 4096;
 
 	public static void main(String[] args) throws IOException {
 		arquivoDeDados = new HashMap<Integer, Bloco>();
@@ -35,8 +35,8 @@ public class Manager {
 		}
 		RandomAccessFile raw =  new RandomAccessFile(new File("dados.bin"), "rw");
 		for ( Entry<Integer, Bloco> entry : arquivoDeDados.entrySet()) {
-		
-			raw.write(entry.getValue().getConteudo());
+			byte[] b =  entry.getValue().getConteudo();
+			raw.write(b);
 		}
 		
 		
