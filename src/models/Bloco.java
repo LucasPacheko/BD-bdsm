@@ -33,6 +33,9 @@ public class Bloco {
 			conteudo[p + i] = (byte) arrayChar[i];
 		}
 	}
+	public Bloco(byte[] cont){
+		conteudo = cont;
+	}
 	public Bloco(int tamanho){
 		conteudo = new byte[tamanho];
 		p = 1;
