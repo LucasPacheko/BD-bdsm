@@ -37,7 +37,8 @@ public class Bloco {
 		conteudo = cont;
 	}
 	public Bloco(int tamanho){
-		conteudo = new byte[tamanho];
+		conteudo = new byte[tamanho];//
+		conteudo[0] = 0;//id conteiner
 		p = 1;
 
 		byte[] bytes = ByteBuffer.allocate(4).putInt(id++).array();
@@ -46,13 +47,13 @@ public class Bloco {
 			conteudo[i] = bytes[j--];
 			p++;
 		}
-		p++;
-		bytes = ByteBuffer.allocate(4).putInt(7).array();
-		j = bytes.length - 1;
-		for (int i = p + 2; j > 0; i--) {
-			conteudo[i] = bytes[j--];
-			p++;
-		}
+		conteudo[4]=0; // tipo de bloco 
+		
+		conteudo[5]=0;//TD
+		conteudo[6]=0;// tamanho tuple directory
+		
+		conteudo[7]=0;//entederco ultimo byte 
+		conteudo[8]=0;
 		
 	}
 	public static void main(String[] args) {
@@ -107,36 +108,33 @@ public class Bloco {
 	public boolean putData(String[] data) {
 		// TODO Auto-generated method stub
 		int sizeTupla=0;
-		int written= getBytesUsados();
-		int sizeBloco = getTamanho();
+		int sizeTD = getSizeTupleDirectory();
+		int endByte = getUltimoByteTuplaUsado(); 
+		int sizeBloco = conteudo.length;
 		for (int i = 0; i < data.length; i++) {
 			sizeTupla=data[i].length();
 		}
 		sizeTupla+=(data.length*2)+4;
 		if(sizeBloco+sizeTupla>sizeBloco)return false;
-		written++;
+		
 		byte[] size = ByteBuffer.allocate(4).putInt(sizeTupla).array();
 		for (byte b : size) {
-			conteudo[written++] = b;
+			conteudo[] = b;
 		}
-		for (int i = 0; i < data.length; i++) {
-			byte[] s = ByteBuffer.allocate(2).putShort((short)data.length).array();
-			for (byte b : s) {
-				conteudo[written++]=b;
-			}
-			for (int j = 0; j < data[i].length(); j++) {
-				conteudo[written++]=(byte)data[i].charAt(j);
-			}
-		}
+		
 		return true;
+	}
+	private int getUltimoByteTuplaUsado() {
+		byte[] b = {conteudo[7],conteudo[8]};
+		return (int)ByteBuffer.wrap(b).getShort()*2;
 	}
 	public byte[] getConteudo() {
 		// TODO Auto-generated method stub
 		
 		return conteudo;
 	}
-	int getBytesUsados(){
-		byte[] b = {(byte)0,conteudo[5],conteudo[6],conteudo[7]};
-		return ByteBuffer.wrap(b).getInt();
+	int getSizeTupleDirectory(){
+		byte[] b = {conteudo[5],conteudo[6]};
+		return (int)ByteBuffer.wrap(b).getShort()*2;
 	}
 }
