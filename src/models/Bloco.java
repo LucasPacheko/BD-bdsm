@@ -15,8 +15,10 @@ public class Bloco {
 	static int id = 0;
 	byte[] conteudo;
 	int p;
-
+	int numTuplasAdcionadas;
+	int freeSpace;
 	public Bloco(int tamanho, String header) {
+		
 		conteudo = new byte[tamanho];
 		p = 0;
 		conteudo[p++] = (byte) id++;
@@ -43,6 +45,8 @@ public class Bloco {
 	}
 
 	public Bloco(int tamanho) {
+		numTuplasAdcionadas=0;
+		freeSpace=tamanho-9;
 		conteudo = new byte[tamanho];//
 		conteudo[0] = 0;// id conteiner
 		p = 1;
@@ -65,8 +69,6 @@ public class Bloco {
 
 	}
 
-	
-
 	public void setProxBlocoLivre(Bloco proxBloco) {
 		byte[] b = proxBloco.getIdBlocoArray();
 		for (int i = 0; i < b.length; i++) {
@@ -78,7 +80,17 @@ public class Bloco {
 		byte[] b = { (byte) 0, conteudo[1], conteudo[2], conteudo[3] };
 		return ByteBuffer.wrap(b).getInt();
 	}
-
+	
+	public byte[] getRowId() {
+		byte[] b = {conteudo[0],conteudo[1],conteudo[2],conteudo[3]};
+		return b;
+	}
+	
+	public int getIdConteiner() {
+		return  (int) conteudo[0];
+	}
+	
+	
 	byte[] getIdBlocoArray() {
 		byte[] b = { (byte) 0, conteudo[1], conteudo[2], conteudo[3] };
 		return b;
@@ -91,7 +103,7 @@ public class Bloco {
 		return bb.getInt();
 	}
 
-	public int getProximoBloco() {
+	public int getProximoBlocoID() {
 		byte[] b = { conteudo[5], conteudo[6], conteudo[7], conteudo[8] };
 		return ByteBuffer.wrap(b).getInt();
 	}
@@ -111,7 +123,18 @@ public class Bloco {
 		String a = new String(arrayChar);
 		return a;
 	}
-
+	
+	public String[] getOffSets() {
+		String[] offSets = new String[getSizeTupleDirectory()/2];
+		int i = 9;
+		
+		for (int j = 0; j < offSets.length; j++) {
+			byte[] a = {conteudo[i++],conteudo[i++]};
+			offSets[j] = ""+ByteBuffer.wrap(a).getShort();
+		}
+		return offSets;
+	}
+	
 	public boolean isFull() {
 		if (conteudo[4] != 0) {
 			return true;
@@ -138,24 +161,35 @@ public class Bloco {
 		// TODO Auto-generated method stub
 		int sizeTupla = 0;
 		int sizeTD = getSizeTupleDirectory();
-		int endByte = getUltimoByteTuplaUsado();
+		int endByte = getUltimoByteUsado();
 		int sizeBloco = conteudo.length;
 		for (int i = 0; i < data.length; i++) {
-			sizeTupla = data[i].length() + 2;// +2 para o tamanho da variavel
+			//			String dado = data[i];
+			int tamanhoDado= data[i].length();
+			sizeTupla += tamanhoDado;
 		}
-		sizeTupla += (data.length * 2) + 4;
-		if (9 + sizeTD + 2 > endByte - sizeTupla)
+		sizeTupla += (data.length * 2) + 4;// 4 mais 2 para cada coluna
+		if (9 + sizeTD + 2 > endByte - sizeTupla)// checa se ainda há espaço
 			return false;
-		int p = endByte - sizeTupla;
-		// marca o edereÃ§o  dentro do bloco
+		int p = endByte - sizeTupla;//ponteiro
+		//att ultimoByte usado
+		setUltimoByteUsado(p);
+		// marca o endereco dentro do bloco
 		byte[] tup = ByteBuffer.allocate(2).putShort((short) p).array();
 		for (byte b : tup) {
-			conteudo[9 + sizeTD++] = b;
+			conteudo[9 + sizeTD++] = b;// 9 é de onde começa o tupleDirectory, e sizeTd é o numero de TD q já existem.
 		}
-		tup = ByteBuffer.allocate(4).putInt(p).array();
+		
+		//att sizeTD no bloco
+		tup = ByteBuffer.allocate(2).putShort((short)sizeTD).array();
+		conteudo[5]=tup[0];
+		conteudo[6]=tup[1];
+		//tamano da tupla
+		tup = ByteBuffer.allocate(4).putInt(sizeTupla).array();
 		for (byte b : tup) {
 			conteudo[p++] = b;
 		}
+		//cada coluna
 		for (String s : data) {
 			int tam = s.getBytes().length;
 			tup = ByteBuffer.allocate(2).putShort((short) tam).array();
@@ -167,14 +201,29 @@ public class Bloco {
 				conteudo[p++]=b;
 			}
 		}
+		
+		//CONTROL
+		freeSpace=freeSpace-sizeTupla-2;
+		numTuplasAdcionadas++;
+		blocoStats();
 		return true;
 	}
-
-	private int getUltimoByteTuplaUsado() {
+	private void blocoStats() {
+		int cont = 0;
+		for (byte b : conteudo) {
+			if(b==0)cont++;
+		}
+		System.out.println("Bloco "+(getIdBlocoInt()+": ("+(conteudo.length-freeSpace)+"/"+(conteudo.length)+")" +(100-(cont * 100 / conteudo.length))) +"% Preenchido");
+	}
+	private int getUltimoByteUsado() {
 		byte[] b = { conteudo[7], conteudo[8] };
 		return (int) ByteBuffer.wrap(b).getShort();
 	}
-
+	private void setUltimoByteUsado(int p) {
+		byte[] b = ByteBuffer.allocate(2).putShort((short)p).array();
+		conteudo[7]=b[0];
+		conteudo[8]=b[1];
+	}
 	public byte[] getConteudo() {
 		// TODO Auto-generated method stub
 
@@ -183,16 +232,17 @@ public class Bloco {
 	public ArrayList<String[]> toArrayList(){
 		ArrayList<String[]> list =  new ArrayList<String[]>();
 		byte[] b = {conteudo[5],conteudo[6]};
-		int tamTD = ByteBuffer.wrap(b).getInt();
-		for (int i = 9; i < tamTD; i+=2) {
+		int tamTD = (int)ByteBuffer.wrap(b).getShort();
+		for (int i = 9; i < 9+tamTD; i+=2) {
 			ArrayList<String> strings = new ArrayList<String>();
 
 			byte[] a = {conteudo[i],conteudo[i+1]};
 		
-			int end = (int)ByteBuffer.wrap(a).getShort();
+			int end = (int)ByteBuffer.wrap(a).getShort();// endereco comeco da tupla
+			//Tamanaho da tupla
 			byte[] c ={conteudo[end],conteudo[end+1],conteudo[end+2],conteudo[end+3]};
 			int tamanhoTupla = ByteBuffer.wrap(c).getInt();
-			for (int j = end+4; j < tamanhoTupla;) {
+			for (int j = end+4; j < end+tamanhoTupla;) {
 				byte[] d = {conteudo[j++],conteudo[j++]};
 				int x =(short)ByteBuffer.wrap(d).getShort();
 				byte dado[] = new byte[x];
@@ -210,9 +260,9 @@ public class Bloco {
 		}
 		return list;
 	}
-
+	
 	int getSizeTupleDirectory() {
 		byte[] b = { conteudo[5], conteudo[6] };
-		return (int) ByteBuffer.wrap(b).getShort() * 2;
+		return (int) ByteBuffer.wrap(b).getShort();
 	}
 }
